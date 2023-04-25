@@ -1,22 +1,22 @@
-# Используем базовый ubuntu image
+# РСЃРїРѕР»СЊР·СѓРµРј Р±Р°Р·РѕРІС‹Р№ ubuntu image
 image: "ubuntu:latest"
 
-# Включаем правила запуска paypline
-# Запускаем наш paypline только в том случае если 
-# изменения были в файле index.html 
+# Р’РєР»СЋС‡Р°РµРј РїСЂР°РІРёР»Р° Р·Р°РїСѓСЃРєР° paypline
+# Р—Р°РїСѓСЃРєР°РµРј РЅР°С€ paypline С‚РѕР»СЊРєРѕ РІ С‚РѕРј СЃР»СѓС‡Р°Рµ РµСЃР»Рё 
+# РёР·РјРµРЅРµРЅРёСЏ Р±С‹Р»Рё РІ С„Р°Р№Р»Рµ index.html 
 workflow:
   rules:
     - changes:
         - index.html
 
-# определяем переменные  для имени приложения
-# и пути в репозитории.
+# РѕРїСЂРµРґРµР»СЏРµРј РїРµСЂРµРјРµРЅРЅС‹Рµ  РґР»СЏ РёРјРµРЅРё РїСЂРёР»РѕР¶РµРЅРёСЏ
+# Рё РїСѓС‚Рё РІ СЂРµРїРѕР·РёС‚РѕСЂРёРё.
 variables:
   TAG_LATEST: $CI_REGISTRY_IMAGE/$APP_NAME-$BRANCH_NAME:latest
   APP_NAME: skill
 
 
-# Указываем наши stage
+# РЈРєР°Р·С‹РІР°РµРј РЅР°С€Рё stage
 stages:
   - build image
   - deploy
@@ -24,8 +24,8 @@ stages:
   - check_md5
   - delete
 
-# Собираем docker образ используя Dockerfile в проекте
-# пушим образ в локальный регистр gitlab 
+# РЎРѕР±РёСЂР°РµРј docker РѕР±СЂР°Р· РёСЃРїРѕР»СЊР·СѓСЏ Dockerfile РІ РїСЂРѕРµРєС‚Рµ
+# РїСѓС€РёРј РѕР±СЂР°Р· РІ Р»РѕРєР°Р»СЊРЅС‹Р№ СЂРµРіРёСЃС‚СЂ gitlab 
 build image:
     image: docker:latest
     stage: build image
@@ -36,8 +36,8 @@ build image:
     - docker build -t registry.git.fido.uz/humoyun.yulchibaev/skilfaktory .
     - docker push registry.git.fido.uz/humoyun.yulchibaev/skilfaktory
 
-# Подключаемся к серверу где будем запускать контейнер с nginx 
-# и стартуем контейнер с именем skill
+# РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє СЃРµСЂРІРµСЂСѓ РіРґРµ Р±СѓРґРµРј Р·Р°РїСѓСЃРєР°С‚СЊ РєРѕРЅС‚РµР№РЅРµСЂ СЃ nginx 
+# Рё СЃС‚Р°СЂС‚СѓРµРј РєРѕРЅС‚РµР№РЅРµСЂ СЃ РёРјРµРЅРµРј skill
 deploy:
   image: alpine:latest
   stage: deploy
@@ -51,26 +51,26 @@ deploy:
     - ssh -i $ID_RSA -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "docker run -dp 9889:80  --name $APP_NAME  registry.git.fido.uz/humoyun.yulchibaev/skilfaktory"
 
 
-# проверка статуса ответа сервера
+# РїСЂРѕРІРµСЂРєР° СЃС‚Р°С‚СѓСЃР° РѕС‚РІРµС‚Р° СЃРµСЂРІРµСЂР°
 check_status_code:
   stage: check_status_code
   image: ubuntu:latest
   tags:
     - deployment
   before_script:
-    # Устанавливаем curl так-как в базовом образе его нет.
+    # РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј curl С‚Р°Рє-РєР°Рє РІ Р±Р°Р·РѕРІРѕРј РѕР±СЂР°Р·Рµ РµРіРѕ РЅРµС‚.
     - apt -y  update && apt -y install curl
   script:
-    # Запускаем curl для проверки статуса и сохраняем в переменную response
+    # Р—Р°РїСѓСЃРєР°РµРј curl РґР»СЏ РїСЂРѕРІРµСЂРєРё СЃС‚Р°С‚СѓСЃР° Рё СЃРѕС…СЂР°РЅСЏРµРј РІ РїРµСЂРµРјРµРЅРЅСѓСЋ response
     - response=$(curl -s -o /dev/null -w "%{http_code}" http://10.50.50.38:9889/index.html)
-    # Проверяем переменную response
-    # Если ответ 200 ничего не делаем
+    # РџСЂРѕРІРµСЂСЏРµРј РїРµСЂРµРјРµРЅРЅСѓСЋ response
+    # Р•СЃР»Рё РѕС‚РІРµС‚ 200 РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј
     - >
       if [ $response == "200" ]; then
         echo "No Problem"
-      # Если ответ не 200 то отвправляем сообщение в чат Slack
+      # Р•СЃР»Рё РѕС‚РІРµС‚ РЅРµ 200 С‚Рѕ РѕС‚РІРїСЂР°РІР»СЏРµРј СЃРѕРѕР±С‰РµРЅРёРµ РІ С‡Р°С‚ Slack
       else
-        curl -X POST -H "Content-type:/ application/json" --data '{"text":"Произошла ошибка при проверке HTTP статуса"}' https://hooks.slack.com/services/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
+        curl -X POST -H "Content-type:/ application/json" --data '{"text":"РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё РїСЂРѕРІРµСЂРєРµ HTTP СЃС‚Р°С‚СѓСЃР°"}' https://hooks.slack.com/services/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
       fi
    
 chekc_md5:
@@ -79,24 +79,24 @@ chekc_md5:
   tags:
     - deployment
   before_script:
-    # Устанавливаем curl и ucommon-utils так-как в базовом образе его нет.
+    # РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј curl Рё ucommon-utils С‚Р°Рє-РєР°Рє РІ Р±Р°Р·РѕРІРѕРј РѕР±СЂР°Р·Рµ РµРіРѕ РЅРµС‚.
     - apt -y update && apt -y install curl ucommon-utils
   script:
-    # Запускаем curl для сохранения файла с nginx
+    # Р—Р°РїСѓСЃРєР°РµРј curl РґР»СЏ СЃРѕС…СЂР°РЅРµРЅРёСЏ С„Р°Р№Р»Р° СЃ nginx
     - curl http://10.50.50.38:9889/index.html  --output from_site.html
-    # проверяем md5 файла из репозитория и файла с сайта.
+    # РїСЂРѕРІРµСЂСЏРµРј md5 С„Р°Р№Р»Р° РёР· СЂРµРїРѕР·РёС‚РѕСЂРёСЏ Рё С„Р°Р№Р»Р° СЃ СЃР°Р№С‚Р°.
     - a=$(md5sum index.html | awk '{print $1}')
     - b=$(md5sum from_site.html | awk '{print $1}')
-    # Если md5 одинаковы то ничего не делаем.
-    # Если файлы разные то  отвправляем сообщение в чат Slack
+    # Р•СЃР»Рё md5 РѕРґРёРЅР°РєРѕРІС‹ С‚Рѕ РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј.
+    # Р•СЃР»Рё С„Р°Р№Р»С‹ СЂР°Р·РЅС‹Рµ С‚Рѕ  РѕС‚РІРїСЂР°РІР»СЏРµРј СЃРѕРѕР±С‰РµРЅРёРµ РІ С‡Р°С‚ Slack
     - > 
       if [[ "$a" == "$b" ]]; then
         echo "No problem"
       else
-        curl -X POST -H "Content-type:/ application/json" --data '{"text":"Произошла ошибка при проверке md5 "}' https://hooks.slack.com/services/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
+        curl -X POST -H "Content-type:/ application/json" --data '{"text":"РџСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° РїСЂРё РїСЂРѕРІРµСЂРєРµ md5 "}' https://hooks.slack.com/services/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
       fi
 
-# Подключаемся к серверу и удаляем контейнер.
+# РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє СЃРµСЂРІРµСЂСѓ Рё СѓРґР°Р»СЏРµРј РєРѕРЅС‚РµР№РЅРµСЂ.
 delete:
   image: alpine:latest
   stage: delete
